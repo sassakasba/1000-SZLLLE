@@ -1,0 +1,40 @@
+name: Scrape Etsy Top 100
+
+on:
+  schedule:
+    - cron: '15 6 * * 1'   # chaque lundi 06:15 UTC
+  workflow_dispatch:       # exécutable à la demande
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Run scraper
+        run: |
+          python scrape_etsy_top100.py \
+            --shop "https://www.etsy.com/shop/PatternsAndStitches?ref=shop-header-name&listing_id=1725310400&from_page=listing" \
+            --out "data/patternsandstitches_top100_reviews.csv" \
+            --concurrency 4
+      - name: Commit & push CSV
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/*.csv || true
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update Etsy Top 100 ($(date -u +'%Y-%m-%d'))"
+            git push
+          fi
