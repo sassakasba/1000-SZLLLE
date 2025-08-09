@@ -1,0 +1,1 @@
+GitHub Actions installera ensuite Chromium via python -m playwright install --with-deps chromium.
